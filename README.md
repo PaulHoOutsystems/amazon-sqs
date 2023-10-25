@@ -66,8 +66,6 @@ To create a queue, you will need to supply the right configuration values. The s
 
 ![send message example](doc/images/create_queue_example.png)
 
-NOTE: For the queue type, you should use the supplied Entities.QueueType.
-
 ### Example 2: Send a message
 
 To send a message, you will need to supply _queueURL_. This is obtained when you create the queue. MessageGroupId and MessageDeduplicationId are mandatory. They are internally controlled by your application. For more information on the use of these arguments, please consult AWS SQS documentation.
