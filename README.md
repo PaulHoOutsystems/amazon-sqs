@@ -1,4 +1,4 @@
-# Sample for ODC
+# AWS SQS (Black Belt Edition) for ODC
 
 ## Introduction
 
