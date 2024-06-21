@@ -33,9 +33,6 @@ namespace psn.PH
         {
             AmazonSQSClient client = getClient(authInfo);
             var attrs = new Dictionary<string, string>();
-            attrs.Add(QueueAttributeName.FifoQueue, IsFiFo.ToString());
-            attrs.Add(QueueAttributeName.ContentBasedDeduplication, UseContentBasedDeduplication.ToString());
-
             var request = new CreateQueueRequest
             {
                 Attributes = attrs,
@@ -43,6 +40,9 @@ namespace psn.PH
             };
             if (IsFiFo)
             {
+                attrs.Add(QueueAttributeName.FifoQueue, IsFiFo.ToString());
+                attrs.Add(QueueAttributeName.ContentBasedDeduplication, UseContentBasedDeduplication.ToString());
+
                 // Update the name if it is not correct for a FIFO queue.
                 if (!QueueName.EndsWith(".fifo"))
                 {
@@ -53,6 +53,13 @@ namespace psn.PH
                 request.Attributes.Remove(QueueAttributeName.FifoQueue);
                 request.Attributes.Add(
                     QueueAttributeName.FifoQueue, "true");
+            }
+            else
+            {
+                request.QueueName = QueueName;
+                request.Attributes.Clear();
+                request.Attributes.Add("DelaySeconds", "60");
+                request.Attributes.Add("MessageRetentionPeriod", "86400");
             }
             var createResponse = Create_Queue(client, request);
             return createResponse.Result.QueueUrl;
@@ -137,9 +144,19 @@ namespace psn.PH
                 MessageAttributes = msgAttributes,
                 MessageBody = MessageBody,
                 QueueUrl = QueueUrl,
-                MessageDeduplicationId = MessageDeduplicationId ?? getCurrentTimeInMillis().ToString(),
-                MessageGroupId = MessageGroupId ?? getCurrentTimeInMillis().ToString(),
+
             };
+            if (MessageDeduplicationId.Length > 0)
+            {
+                // For Fifo queues
+                sendMessageRequest.MessageDeduplicationId = MessageDeduplicationId ?? getCurrentTimeInMillis().ToString();
+                sendMessageRequest.MessageGroupId = MessageGroupId ?? getCurrentTimeInMillis().ToString();
+            }
+            else
+            {
+                // For standard queues
+                sendMessageRequest.DelaySeconds = 10;
+            }
             var response = await client.SendMessageAsync(sendMessageRequest);
             return response.MessageId;
         }
